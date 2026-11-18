@@ -1,0 +1,6 @@
+line-length = 100
+
+[lint.per-file-ignores]
+# evals modules insert agent/ into sys.path before importing the agent
+# package, so their imports legitimately come after code.
+"evals/*.py" = ["E402"]

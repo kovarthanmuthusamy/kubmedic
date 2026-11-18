@@ -1,3 +1,6 @@
 # Ollama models used by KubeMedic, one per line. `make models` pulls them.
-# Chosen on day 1-2 after checking which current models list tool support.
-# Volta (GV100) has no native bf16, so prefer quantized GGUF builds.
+# Both are tool-calling-capable instruct models, quantized (q4_K_M)
+# because Volta (GV100) has no native bf16. The benchmark compares them;
+# the paid-API baseline is a config change (KUBMEDIC_MODEL), not a pull.
+qwen2.5:7b-instruct-q4_K_M
+llama3.1:8b-instruct-q4_K_M

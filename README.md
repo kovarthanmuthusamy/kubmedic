@@ -2,7 +2,7 @@
 
 **A self-healing Kubernetes incident-response agent.** It detects a failure in a running microservice system, investigates it with read-only tools, and opens the fix as a pull request. A human approves, and GitOps (ArgoCD) deploys it. An evaluation pipeline measures how well the agent does, on local models and on a paid API.
 
-> **Status: in development.** The platform layer is built and verified (see [Status](#status)). The agent, the fault benchmark and the results are planned and not done yet. Nothing in this README claims a result that has not been measured; unmeasured numbers are marked `TBD`.
+> **Status: code-complete, benchmark not yet run.** The platform layer, the agent, the 12 fault scenarios and the evaluation pipeline are built and verified in CI (unit tests, a 12/12 replay gate, manifest validation). The live benchmark — the numbers in the table below — has not been run: it needs a machine with Docker and a GPU, and this project's original workstation is gone. Nothing in this README claims a result that has not been measured; unmeasured numbers are marked `TBD`.
 
 ## Headline results
 
@@ -57,7 +57,7 @@ One incident, end to end:
 
 ## Stack
 
-Running today: kind, Ollama, and the CLI tooling (`kubectl`, `helm`, `terraform`). Everything else below is planned.
+Everything below is in this repo and covered by CI. The parts that have run live so far are the platform layer (kind, Ollama, CLI tooling); the full GitOps deployment and the benchmark await a machine with Docker and a GPU.
 
 | Layer | Tool | Why this one |
 |---|---|---|
@@ -83,11 +83,11 @@ Running today: kind, Ollama, and the CLI tooling (`kubectl`, `helm`, `terraform`
 - **Model-agnostic by design.** All model calls go through LiteLLM. The same benchmark runs against local and paid models.
 - **Few, simple tools.** Local models are weaker at multi-step tool calling, so the tool set is small, with tight schemas and truncated outputs.
 - **Evals as a CI gate, at zero cost.** CI replays recorded agent trajectories, so pull requests are checked without any model calls. Live benchmark runs happen manually and rarely.
-- **Reproducibility.** Tool versions are pinned and every download is checked against the publisher's SHA-256. Installers are idempotent. A one-command `make up` is planned.
+- **Reproducibility.** Tool versions are pinned and every download is checked against the publisher's SHA-256. Installers are idempotent. `make up` / `make down` bring the whole system up and down in one command.
 
-## Evaluation (planned)
+## Evaluation
 
-Each scenario has a known root cause and a known correct fix. Candidate faults, to be finalised with ground truth when the benchmark is built:
+Each scenario has a known root cause and a known correct fix, and lives in `chaos/scenarios/` with the evidence the tools would observe. The 12 faults:
 
 | Fault | Typical symptom | Expected fix |
 |---|---|---|
@@ -133,17 +133,17 @@ Done and verified:
 - [x] Three-node kind cluster (1 control plane, 2 workers) with Kubernetes pinned by digest
 - [x] Ollama 0.40.13 as a systemd service, with both NVIDIA Quadro GV100 (Volta) GPUs verified and a tool-calling smoke test passed
 - [x] `make doctor` environment check
+- [x] Online Boutique Helm chart and the monitoring stack (Prometheus, Loki, Grafana, Alertmanager) as ArgoCD applications — chart renders and validates in CI
+- [x] ArgoCD app-of-apps GitOps layout, Kyverno guardrail policies, read-only agent RBAC
+- [x] 12 fault scenarios with ground truth, expected fixes and recorded evidence (`chaos/scenarios/`)
+- [x] Diagnosing agent (LangGraph: triage → investigate → plan) with read-only tools, per-incident budgets and JSON trajectory recording
+- [x] PR-based remediation with a human approval gate (the agent's only write path)
+- [x] Benchmark harness and scoring (`evals/`), replay-based eval gate (12/12) and Terraform validation in CI
 
-Planned:
+Still to do (needs a machine with Docker + a GPU):
 
-- [ ] Online Boutique and the monitoring stack (Prometheus, Loki, Grafana, Alertmanager)
-- [ ] ArgoCD and the GitOps repo layout
-- [ ] First fault scenarios and the read-only investigation tools
-- [ ] Diagnosing agent with Langfuse tracing
-- [ ] PR-based remediation with a human approval gate
-- [ ] 10 to 12 fault scenarios, benchmark harness and scoring
-- [ ] Replay-based eval gate and Terraform validation in CI
-- [ ] Local-model benchmark, optional paid-API baseline, comparison table
+- [ ] Local-model benchmark run, optional paid-API baseline, comparison table
+- [ ] Langfuse tracing (trajectories are recorded as JSON today; Langfuse is not wired yet)
 - [ ] Demo video and Grafana dashboard for time-to-fix and cost
 
 ## Quick start (what works today)
@@ -151,14 +151,15 @@ Planned:
 Prerequisites: Ubuntu 22.04 on WSL2 with systemd enabled, Docker Engine running, `curl`, `python3` and [`uv`](https://docs.astral.sh/uv/).
 
 ```bash
-git clone https://github.com/kovarthanmuthusamy/Kubmedic.git && cd Kubmedic
+git clone https://github.com/kovarthanmuthusamy/kubmedic.git && cd kubmedic
 ./infra/bootstrap/install-tools.sh     # kubectl, kind, helm, terraform, jq (pinned, checksum-verified)
 ./infra/bootstrap/install-ollama.sh    # Ollama as a systemd service (asks for sudo once)
-kind create cluster --config infra/kind/cluster.yaml
 make doctor                            # checks tools, Docker, GPUs and Ollama
+make models                            # pull the Ollama models in models.txt
+make up                                # kind cluster + ArgoCD + the whole platform
+make replay                            # zero-cost eval gate: 12 scenarios, no cluster needed
+make benchmark                         # live benchmark (needs the cluster and a model)
 ```
-
-A one-command `make up` / `make down` is planned.
 
 ## Repository layout
 
@@ -166,7 +167,7 @@ A one-command `make up` / `make down` is planned.
 infra/bootstrap/   installers for the tools and the Ollama service
 infra/kind/        kind cluster definition
 infra/terraform/   IaC, validated in CI only
-gitops/            what ArgoCD watches (app, monitoring, chaos, policy)
+gitops/            what ArgoCD watches (boutique chart, platform apps, agent, policies)
 agent/             LangGraph agent and its read-only tools
 chaos/             fault scenarios: manifest, root cause, expected fix
 evals/             benchmark harness, scoring, recorded trajectories, results
