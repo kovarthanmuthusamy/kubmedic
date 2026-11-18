@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  python:
+    name: Python (agent + evals)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install agent + dev tools
+        run: |
+          pip install ./agent
+          pip install pytest ruff
+      - name: Ruff
+        run: ruff check agent evals
+      - name: Unit tests
+        run: pytest agent/tests evals/test_scoring.py -q
+      - name: Replay eval gate (zero-cost, no model calls)
+        run: python -m evals.replay
+
+  manifests:
+    name: Kubernetes manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install helm + kubeconform
+        run: |
+          curl -fsSL https://get.helm.sh/helm-v3.16.2-linux-amd64.tar.gz | tar xz
+          sudo mv linux-amd64/helm /usr/local/bin/
+          curl -fsSL -o kubeconform.tar.gz https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          tar xzf kubeconform.tar.gz kubeconform
+          sudo mv kubeconform /usr/local/bin/
+      - name: Render the boutique chart and validate schemas
+        run: |
+          helm template boutique gitops/app --namespace boutique > /tmp/boutique.yaml
+          kubeconform -strict -summary /tmp/boutique.yaml
+      - name: Validate plain manifests (CRDs tolerated as unknown schemas)
+        run: |
+          kubeconform -ignore-missing-schemas -summary \
+            gitops/agent gitops/policy gitops/argocd
+
+  terraform:
+    name: Terraform (validate only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Init (no backend), validate, fmt
+        working-directory: infra/terraform
+        run: |
+          terraform init -backend=false
+          terraform validate
+          terraform fmt -check
+
+  docker:
+    name: Agent image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the agent image (no push)
+        run: docker build -t kubmedic-agent:ci agent/
