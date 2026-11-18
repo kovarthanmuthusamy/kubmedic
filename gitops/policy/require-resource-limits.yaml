@@ -1,0 +1,29 @@
+# Guardrail: nothing runs without resource limits — the class of
+# misconfiguration behind half the benchmark's faults. Enforced on the
+# boutique namespace; the agent's fixes must satisfy it too.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-resource-limits
+  annotations:
+    policies.kyverno.io/title: Require resource limits
+    policies.kyverno.io/severity: medium
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-limits
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [boutique]
+      validate:
+        message: "Every container must set CPU and memory limits."
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  limits:
+                    cpu: "?*"
+                    memory: "?*"

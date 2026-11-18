@@ -1,0 +1,33 @@
+# Guardrail: no mutable or implicit image tags in the boutique
+# namespace — tags must be explicit so a "bad image tag" fault is a
+# visible values change, never a silent upstream drift.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-tag
+  annotations:
+    policies.kyverno.io/title: Disallow latest tag
+    policies.kyverno.io/severity: medium
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: no-latest-or-untagged
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [boutique]
+      validate:
+        message: "Images must use an explicit tag other than :latest."
+        foreach:
+          - list: request.object.spec.containers[]
+            deny:
+              conditions:
+                any:
+                  - key: "{{ regex_match('^.*:latest$', element.image) }}"
+                    operator: Equals
+                    value: true
+                  - key: "{{ regex_match('^[^:@]+$', element.image) }}"
+                    operator: Equals
+                    value: true
