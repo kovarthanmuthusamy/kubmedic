@@ -1,0 +1,55 @@
+{{- range $name, $svc := .Values.services }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    app: {{ $name }}
+spec:
+  replicas: {{ $svc.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+    spec:
+      containers:
+        - name: {{ $name }}
+          image: "{{ $svc.image }}:{{ $svc.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ $svc.port }}
+          {{- with $svc.args }}
+          args: {{ . | splitList " " | toJson }}
+          {{- end }}
+          env:
+            {{- range $k, $v := $svc }}
+            {{- if and (hasPrefix "env_" $k) (ne $k "env_from_secret") }}
+            - name: {{ trimPrefix "env_" $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+            {{- end }}
+          {{- with $svc.env_from_secret }}
+          envFrom:
+            - secretRef:
+                name: {{ . }}
+          {{- end }}
+          resources:
+            requests:
+              cpu: {{ $svc.resources_requests_cpu }}
+              memory: {{ $svc.resources_requests_memory }}
+            limits:
+              cpu: {{ $svc.resources_limits_cpu }}
+              memory: {{ $svc.resources_limits_memory }}
+          {{- with $svc.probe_path }}
+          readinessProbe:
+            httpGet:
+              path: {{ . }}
+              port: {{ $svc.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          {{- end }}
+{{- end }}
