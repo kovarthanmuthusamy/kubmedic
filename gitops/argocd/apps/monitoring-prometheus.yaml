@@ -1,0 +1,51 @@
+# Prometheus + Grafana + Alertmanager. Alertmanager sends firing alerts
+# to the KubeMedic agent's webhook; that webhook is the start of every
+# incident the agent works on.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-prometheus
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: "65.*"
+    helm:
+      values: |
+        prometheus:
+          prometheusSpec:
+            retention: 2d
+            resources:
+              requests: {cpu: 200m, memory: 512Mi}
+              limits: {cpu: "1", memory: 1Gi}
+        grafana:
+          enabled: true
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+        alertmanager:
+          config:
+            global:
+              resolve_timeout: 5m
+            route:
+              receiver: kubmedic-webhook
+              group_by: [alertname, namespace]
+              group_wait: 10s
+              repeat_interval: 30m
+            receivers:
+              - name: kubmedic-webhook
+                webhook_configs:
+                  - url: http://kubmedic-agent.boutique-agent.svc.cluster.local:8080/alerts
+                    send_resolved: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
