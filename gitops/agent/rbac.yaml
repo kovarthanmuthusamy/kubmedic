@@ -1,0 +1,38 @@
+# The agent's service account is READ-ONLY, cluster-wide for the few
+# resource kinds an investigation needs. This is the architectural
+# guarantee behind "the agent cannot change the cluster": even a fully
+# prompt-injected agent holds no write verb. Its only write path is a
+# git branch + pull request (see agent/kubmedic_agent/pr.py).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubmedic-agent
+  namespace: boutique-agent
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kubmedic-agent-readonly
+rules:
+  - apiGroups: [""]
+    resources: [pods, pods/log, events, services, endpoints, namespaces, nodes]
+    verbs: [get, list, watch]
+  - apiGroups: [apps]
+    resources: [deployments, replicasets]
+    verbs: [get, list, watch]
+  - apiGroups: [metrics.k8s.io]
+    resources: [pods, nodes]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubmedic-agent-readonly
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubmedic-agent-readonly
+subjects:
+  - kind: ServiceAccount
+    name: kubmedic-agent
+    namespace: boutique-agent
