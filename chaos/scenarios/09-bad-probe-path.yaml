@@ -1,0 +1,40 @@
+id: 09-bad-probe-path
+title: Failing readiness probe path
+service: frontend
+category: config
+symptom: Pods run but never become ready
+alert:
+  name: KubePodNotReady
+  labels:
+    namespace: boutique
+    service: frontend
+  annotations:
+    summary: 'frontend: Pods run but never become ready'
+fault:
+- service: frontend
+  key: probe_path
+  value: /healthz-wrong
+fix:
+- service: frontend
+  key: probe_path
+  value: /_healthz
+root_cause: The frontend readiness probe path was changed to /healthz-wrong, which
+  returns 404, so pods never become ready.
+root_cause_keywords:
+- probe
+- readiness
+- path
+evidence:
+  pod:
+    name: frontend-7d9f6b5c4-x2abc
+    service: frontend
+    status: Running
+    ready: 0/1
+    restarts: 0
+  describe_lines:
+  - 'State: Running'
+  logs:
+  - serving on :80
+  events:
+  - 'Warning  Unhealthy  kubelet  Readiness probe failed: HTTP probe failed with statuscode:
+    404'

@@ -1,0 +1,36 @@
+id: 10-connection-pool-low
+title: Connection pool setting too low
+service: productcatalogservice
+category: config
+symptom: Timeouts under load (deadline exceeded)
+alert:
+  name: BoutiqueHighLatency
+  labels:
+    namespace: boutique
+    service: productcatalogservice
+  annotations:
+    summary: 'productcatalogservice: Timeouts under load (deadline exceeded)'
+fault:
+- service: productcatalogservice
+  key: env_POOL_SIZE
+  value: '2'
+fix:
+- service: productcatalogservice
+  key: env_POOL_SIZE
+  value: '100'
+root_cause: productcatalogservice connection pool was cut from 100 to 2, so concurrent
+  callers time out. Modelled as a values-level config fault.
+root_cause_keywords:
+- pool
+evidence:
+  pod:
+    name: productcatalogservice-7d9f6b5c4-x2abc
+    service: productcatalogservice
+    status: Running
+    ready: 1/1
+    restarts: 0
+  describe_lines:
+  - 'State: Running'
+  logs:
+  - 'rpc error: code = DeadlineExceeded desc = context deadline exceeded'
+  events: []

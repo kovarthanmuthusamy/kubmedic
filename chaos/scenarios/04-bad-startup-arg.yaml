@@ -1,0 +1,42 @@
+id: 04-bad-startup-arg
+title: Bad startup argument
+service: emailservice
+category: config
+symptom: CrashLoopBackOff on an invalid flag
+alert:
+  name: KubePodCrashLooping
+  labels:
+    namespace: boutique
+    service: emailservice
+  annotations:
+    summary: 'emailservice: CrashLoopBackOff on an invalid flag'
+fault:
+- service: emailservice
+  key: args
+  value: --port=notaport
+fix:
+- service: emailservice
+  key: args
+  value: ''
+root_cause: emailservice was given the startup argument --port=notaport, which fails
+  flag parsing.
+root_cause_keywords:
+- arg
+- flag
+- port
+evidence:
+  pod:
+    name: emailservice-7d9f6b5c4-x2abc
+    service: emailservice
+    status: CrashLoopBackOff
+    ready: 0/1
+    restarts: 4
+  describe_lines:
+  - 'State: Waiting'
+  - 'Reason: CrashLoopBackOff'
+  - 'Exit Code: 2'
+  logs:
+  - 'error: invalid value "notaport" for flag -port: parse error'
+  - 'Usage: emailservice [flags]'
+  events:
+  - Warning  BackOff  kubelet  Back-off restarting failed container

@@ -1,0 +1,37 @@
+id: 05-selector-mismatch
+title: Service selector does not match pod labels
+service: frontend
+category: networking
+symptom: Pods healthy, Service has no endpoints
+alert:
+  name: BoutiqueServiceNoEndpoints
+  labels:
+    namespace: boutique
+    service: frontend
+  annotations:
+    summary: 'frontend: Pods healthy, Service has no endpoints'
+fault:
+- service: frontend
+  key: service_selector_app
+  value: fronted
+fix:
+- service: frontend
+  key: service_selector_app
+  value: frontend
+root_cause: The frontend Service selector was typo'd to 'fronted', so it selects no
+  pods and has no endpoints.
+root_cause_keywords:
+- selector
+- endpoint
+evidence:
+  pod:
+    name: frontend-7d9f6b5c4-x2abc
+    service: frontend
+    status: Running
+    ready: 1/1
+    restarts: 0
+  describe_lines:
+  - 'State: Running'
+  logs:
+  - serving on :80
+  events: []

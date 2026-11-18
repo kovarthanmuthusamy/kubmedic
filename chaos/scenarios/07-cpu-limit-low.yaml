@@ -1,0 +1,38 @@
+id: 07-cpu-limit-low
+title: CPU limit too low
+service: paymentservice
+category: resources
+symptom: Severe CPU throttling, payment latency spikes
+alert:
+  name: BoutiqueHighLatency
+  labels:
+    namespace: boutique
+    service: paymentservice
+  annotations:
+    summary: 'paymentservice: Severe CPU throttling, payment latency spikes'
+fault:
+- service: paymentservice
+  key: resources_limits_cpu
+  value: 25m
+fix:
+- service: paymentservice
+  key: resources_limits_cpu
+  value: 500m
+root_cause: paymentservice CPU limit was cut from 500m to 25m; the kernel throttles
+  it almost continuously.
+root_cause_keywords:
+- cpu
+- limit
+- throttl
+evidence:
+  pod:
+    name: paymentservice-7d9f6b5c4-x2abc
+    service: paymentservice
+    status: Running
+    ready: 1/1
+    restarts: 0
+  describe_lines:
+  - 'State: Running'
+  logs:
+  - payment request took 4.8s (deadline 5s)
+  events: []

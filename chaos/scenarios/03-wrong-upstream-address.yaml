@@ -1,0 +1,39 @@
+id: 03-wrong-upstream-address
+title: Wrong upstream address in a config value
+service: recommendationservice
+category: config
+symptom: Recommendation calls fail with connection refused
+alert:
+  name: BoutiqueServiceErrors
+  labels:
+    namespace: boutique
+    service: recommendationservice
+  annotations:
+    summary: 'recommendationservice: Recommendation calls fail with connection refused'
+fault:
+- service: recommendationservice
+  key: env_PRODUCT_CATALOG_SERVICE_ADDR
+  value: productcatalogservice:3551
+fix:
+- service: recommendationservice
+  key: env_PRODUCT_CATALOG_SERVICE_ADDR
+  value: productcatalogservice:3550
+root_cause: recommendationservice points at productcatalogservice:3551, but the catalog
+  listens on 3550.
+root_cause_keywords:
+- product_catalog
+- address
+- port
+evidence:
+  pod:
+    name: recommendationservice-7d9f6b5c4-x2abc
+    service: recommendationservice
+    status: Running
+    ready: 1/1
+    restarts: 0
+  describe_lines:
+  - 'State: Running'
+  logs:
+  - 'rpc error: code = Unavailable desc = connection error: dial tcp productcatalogservice:3551:
+    connect: connection refused'
+  events: []

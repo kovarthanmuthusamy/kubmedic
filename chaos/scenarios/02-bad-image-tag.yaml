@@ -1,0 +1,39 @@
+id: 02-bad-image-tag
+title: Bad image tag
+service: frontend
+category: image
+symptom: ImagePullBackOff
+alert:
+  name: KubePodNotReady
+  labels:
+    namespace: boutique
+    service: frontend
+  annotations:
+    summary: 'frontend: ImagePullBackOff'
+fault:
+- service: frontend
+  key: tag
+  value: v0.10.99
+fix:
+- service: frontend
+  key: tag
+  value: v0.10.1
+root_cause: frontend image tag was changed to v0.10.99, which does not exist in the
+  registry.
+root_cause_keywords:
+- image
+- tag
+evidence:
+  pod:
+    name: frontend-7d9f6b5c4-x2abc
+    service: frontend
+    status: ImagePullBackOff
+    ready: 0/1
+    restarts: 0
+  describe_lines:
+  - 'State: Waiting'
+  - 'Reason: ImagePullBackOff'
+  logs: []
+  events:
+  - 'Warning  Failed  kubelet  Failed to pull image "gcr.io/google-samples/microservices-demo/frontend:v0.10.99":
+    not found'

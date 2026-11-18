@@ -1,0 +1,44 @@
+id: 01-oom-memory-limit
+title: Memory limit too low
+service: checkoutservice
+category: resources
+symptom: OOMKilled, CrashLoopBackOff
+alert:
+  name: KubePodCrashLooping
+  labels:
+    namespace: boutique
+    service: checkoutservice
+  annotations:
+    summary: 'checkoutservice: OOMKilled, CrashLoopBackOff'
+fault:
+- service: checkoutservice
+  key: resources_limits_memory
+  value: 64Mi
+fix:
+- service: checkoutservice
+  key: resources_limits_memory
+  value: 512Mi
+root_cause: checkoutservice memory limit was cut from 512Mi to 64Mi; the process is
+  OOMKilled on startup.
+root_cause_keywords:
+- memory
+- oom
+- limit
+evidence:
+  pod:
+    name: checkoutservice-7d9f6b5c4-x2abc
+    service: checkoutservice
+    status: CrashLoopBackOff
+    ready: 0/1
+    restarts: 6
+  describe_lines:
+  - 'State: Waiting'
+  - 'Reason: CrashLoopBackOff'
+  - 'Last State: Terminated'
+  - 'Reason: OOMKilled'
+  - 'Exit Code: 137'
+  logs:
+  - starting checkoutservice
+  - 'fatal error: out of memory'
+  events:
+  - 'Warning  Failed  kubelet  Error: OOMKilled'

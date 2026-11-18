@@ -1,0 +1,38 @@
+id: 06-wrong-target-port
+title: Wrong targetPort on a Service
+service: cartservice
+category: networking
+symptom: Callers get connection refused although pods are healthy
+alert:
+  name: BoutiqueServiceErrors
+  labels:
+    namespace: boutique
+    service: cartservice
+  annotations:
+    summary: 'cartservice: Callers get connection refused although pods are healthy'
+fault:
+- service: cartservice
+  key: target_port
+  value: 7071
+fix:
+- service: cartservice
+  key: target_port
+  value: 7070
+root_cause: The cartservice Service targetPort was changed to 7071 while the container
+  listens on 7070.
+root_cause_keywords:
+- target_port
+- targetport
+- port
+evidence:
+  pod:
+    name: cartservice-7d9f6b5c4-x2abc
+    service: cartservice
+    status: Running
+    ready: 1/1
+    restarts: 0
+  describe_lines:
+  - 'State: Running'
+  logs:
+  - listening on 0.0.0.0:7070
+  events: []

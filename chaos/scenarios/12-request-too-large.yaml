@@ -1,0 +1,39 @@
+id: 12-request-too-large
+title: Resource request larger than any node
+service: shippingservice
+category: resources
+symptom: Pod stuck Pending, unschedulable
+alert:
+  name: KubePodNotReady
+  labels:
+    namespace: boutique
+    service: shippingservice
+  annotations:
+    summary: 'shippingservice: Pod stuck Pending, unschedulable'
+fault:
+- service: shippingservice
+  key: resources_requests_cpu
+  value: '64'
+fix:
+- service: shippingservice
+  key: resources_requests_cpu
+  value: 100m
+root_cause: shippingservice requests 64 CPUs, more than any node in the cluster has,
+  so its pod can never schedule.
+root_cause_keywords:
+- request
+- cpu
+- schedul
+evidence:
+  pod:
+    name: shippingservice-7d9f6b5c4-x2abc
+    service: shippingservice
+    status: Pending
+    ready: 0/1
+    restarts: 0
+  describe_lines:
+  - 'State: Pending'
+  logs: []
+  events:
+  - 'Warning  FailedScheduling  scheduler  0/3 nodes are available: 3 Insufficient
+    cpu.'

@@ -1,0 +1,29 @@
+id: 08-replicas-zero
+title: Replicas set to zero
+service: adservice
+category: availability
+symptom: Service unavailable, no pods exist
+alert:
+  name: KubeDeploymentReplicasMismatch
+  labels:
+    namespace: boutique
+    service: adservice
+  annotations:
+    summary: 'adservice: Service unavailable, no pods exist'
+fault:
+- service: adservice
+  key: replicas
+  value: 0
+fix:
+- service: adservice
+  key: replicas
+  value: 1
+root_cause: adservice was scaled to 0 replicas, so the frontend cannot fetch ads.
+root_cause_keywords:
+- replica
+- scaled
+evidence:
+  pod: null
+  describe_lines: []
+  logs: []
+  events: []
