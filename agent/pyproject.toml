@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kubmedic-agent"
+version = "0.1.0"
+description = "KubeMedic: a self-healing Kubernetes incident-response agent (triage -> investigate -> PR fix)"
+requires-python = ">=3.11"
+dependencies = [
+    "langgraph>=0.2",
+    "litellm>=1.40",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "pydantic>=2.6",
+    "pyyaml>=6.0",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.4"]
+
+[project.scripts]
+kubmedic = "kubmedic_agent.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["kubmedic_agent*"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
