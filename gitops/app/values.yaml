@@ -1,0 +1,162 @@
+# Online Boutique values — the single source of truth for the target system.
+#
+# Keys are FLAT per service on purpose (see agent/kubmedic_agent/values.py):
+# a fault is a list of (service, key, bad value) and a fix is the inverse.
+# env_<NAME> keys become container environment variables.
+services:
+  frontend:
+    image: gcr.io/google-samples/microservices-demo/frontend
+    tag: v0.10.1
+    replicas: 1
+    port: 80
+    target_port: 80
+    args: ""
+    env_PRODUCT_CATALOG_SERVICE_ADDR: productcatalogservice:3550
+    env_CURRENCY_SERVICE_ADDR: currencyservice:7000
+    env_CART_SERVICE_ADDR: cartservice:7070
+    env_RECOMMENDATION_SERVICE_ADDR: recommendationservice:8080
+    env_SHIPPING_SERVICE_ADDR: shippingservice:50051
+    env_CHECKOUT_SERVICE_ADDR: checkoutservice:5050
+    env_AD_SERVICE_ADDR: adservice:9555
+    service_selector_app: frontend
+    resources_requests_cpu: 100m
+    resources_requests_memory: 128Mi
+    resources_limits_cpu: 250m
+    resources_limits_memory: 256Mi
+    probe_path: /_healthz
+  cartservice:
+    image: gcr.io/google-samples/microservices-demo/cartservice
+    tag: v0.10.1
+    replicas: 1
+    port: 7070
+    target_port: 7070
+    args: ""
+    env_REDIS_ADDR: redis-cart:6379
+    env_LISTEN_ADDR: 0.0.0.0
+    resources_requests_cpu: 100m
+    resources_requests_memory: 128Mi
+    resources_limits_cpu: 300m
+    resources_limits_memory: 256Mi
+  productcatalogservice:
+    image: gcr.io/google-samples/microservices-demo/productcatalogservice
+    tag: v0.10.1
+    replicas: 1
+    port: 3550
+    target_port: 3550
+    args: ""
+    env_EXTRA_LATENCY: ""
+    env_POOL_SIZE: "100"
+    resources_requests_cpu: 100m
+    resources_requests_memory: 128Mi
+    resources_limits_cpu: 300m
+    resources_limits_memory: 256Mi
+  currencyservice:
+    image: gcr.io/google-samples/microservices-demo/currencyservice
+    tag: v0.10.1
+    replicas: 1
+    port: 7000
+    target_port: 7000
+    args: ""
+    resources_requests_cpu: 100m
+    resources_requests_memory: 128Mi
+    resources_limits_cpu: 300m
+    resources_limits_memory: 256Mi
+  paymentservice:
+    image: gcr.io/google-samples/microservices-demo/paymentservice
+    tag: v0.10.1
+    replicas: 1
+    port: 50051
+    target_port: 50051
+    args: ""
+    resources_requests_cpu: 100m
+    resources_requests_memory: 128Mi
+    resources_limits_cpu: 500m
+    resources_limits_memory: 256Mi
+  shippingservice:
+    image: gcr.io/google-samples/microservices-demo/shippingservice
+    tag: v0.10.1
+    replicas: 1
+    port: 50051
+    target_port: 50051
+    args: ""
+    resources_requests_cpu: 100m
+    resources_requests_memory: 128Mi
+    resources_limits_cpu: 300m
+    resources_limits_memory: 256Mi
+  emailservice:
+    image: gcr.io/google-samples/microservices-demo/emailservice
+    tag: v0.10.1
+    replicas: 1
+    port: 5000
+    target_port: 5000
+    args: ""
+    env_from_secret: ""
+    resources_requests_cpu: 100m
+    resources_requests_memory: 128Mi
+    resources_limits_cpu: 300m
+    resources_limits_memory: 256Mi
+  checkoutservice:
+    image: gcr.io/google-samples/microservices-demo/checkoutservice
+    tag: v0.10.1
+    replicas: 1
+    port: 5050
+    target_port: 5050
+    args: ""
+    env_PRODUCT_CATALOG_SERVICE_ADDR: productcatalogservice:3550
+    env_CURRENCY_SERVICE_ADDR: currencyservice:7000
+    env_CART_SERVICE_ADDR: cartservice:7070
+    env_SHIPPING_SERVICE_ADDR: shippingservice:50051
+    env_PAYMENT_SERVICE_ADDR: paymentservice:50051
+    env_EMAIL_SERVICE_ADDR: emailservice:5000
+    resources_requests_cpu: 100m
+    resources_requests_memory: 256Mi
+    resources_limits_cpu: 500m
+    resources_limits_memory: 512Mi
+  recommendationservice:
+    image: gcr.io/google-samples/microservices-demo/recommendationservice
+    tag: v0.10.1
+    replicas: 1
+    port: 8080
+    target_port: 8080
+    args: ""
+    env_PRODUCT_CATALOG_SERVICE_ADDR: productcatalogservice:3550
+    env_DISABLE_PROFILER: "0"
+    resources_requests_cpu: 100m
+    resources_requests_memory: 256Mi
+    resources_limits_cpu: 500m
+    resources_limits_memory: 512Mi
+  adservice:
+    image: gcr.io/google-samples/microservices-demo/adservice
+    tag: v0.10.1
+    replicas: 1
+    port: 9555
+    target_port: 9555
+    args: ""
+    resources_requests_cpu: 100m
+    resources_requests_memory: 256Mi
+    resources_limits_cpu: 500m
+    resources_limits_memory: 512Mi
+  redis-cart:
+    image: redis
+    tag: alpine
+    replicas: 1
+    port: 6379
+    target_port: 6379
+    args: ""
+    resources_requests_cpu: 100m
+    resources_requests_memory: 128Mi
+    resources_limits_cpu: 300m
+    resources_limits_memory: 256Mi
+  loadgenerator:
+    image: gcr.io/google-samples/microservices-demo/loadgenerator
+    tag: v0.10.1
+    replicas: 0
+    port: 8089
+    target_port: 8089
+    args: ""
+    env_FRONTEND_ADDR: frontend:80
+    env_USERS: "10"
+    resources_requests_cpu: 100m
+    resources_requests_memory: 128Mi
+    resources_limits_cpu: 300m
+    resources_limits_memory: 256Mi

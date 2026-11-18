@@ -1,0 +1,9 @@
+apiVersion: v2
+name: online-boutique
+description: >-
+  Google Online Boutique microservices, packaged so that every knob the
+  incident agent may need to fix lives as a flat key in values.yaml.
+  Faults are faulty values commits; fixes are values pull requests.
+type: application
+version: 0.1.0
+appVersion: v0.10.1
