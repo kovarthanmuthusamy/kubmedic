@@ -1,3 +1,5 @@
+![cover](cover.png)
+
 # KubeMedic
 
 **A self-healing Kubernetes incident-response agent.** It detects a failure in a running microservice system, investigates it with read-only tools, and opens the fix as a pull request. A human approves, and GitOps (ArgoCD) deploys it. An evaluation pipeline measures how well the agent does, on local models and on a paid API.
