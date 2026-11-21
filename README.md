@@ -14,6 +14,35 @@
 
 Results will be filled in from recorded benchmark runs committed to `evals/results/`. Until those exist, the table stays `TBD`.
 
+## Live demo — one real incident (21 Nov 2026)
+
+A single live incident, run end to end on a kind cluster (Azure VM, 4 vCPU /
+16 GB) with the Online Boutique, Prometheus and Loki. This is **one incident**,
+not the 12-scenario benchmark above — the benchmark table stays `TBD`.
+
+**The fault.** The `frontend` deployment's image tag was changed to a version
+that does not exist (`v0.10.1` → `v0.10.99`). The new pod went
+`ImagePullBackOff` and the rollout stalled. The agent was handed the alert
+`KubePodNotReady` for `frontend`.
+
+**What the agent did.** In **37 s** and **10,724 tokens** (**$0.0415** on the
+paid API, model `anthropic/claude-sonnet-4-6`), it triaged the alert,
+investigated with kubectl, Prometheus and Loki, and diagnosed the root cause:
+
+> "A faulty commit changed frontend.tag from "v0.10.1" to the non-existent
+> "v0.10.99". Kubernetes cannot pull the image
+> gcr.io/google-samples/microservices-demo/frontend:v0.10.99 (not found in
+> GCR), causing the new frontend pod to stay in ImagePullBackOff. The old
+> replica (v0.10.1) is still serving traffic, but the rollout is broken."
+
+Its fix — restore `frontend.tag` to `v0.10.1` — was committed to the branch
+`kubmedic/fix-frontend-1795286763`. Applying that fix to the cluster brought
+the frontend back to `1/1 Running`; all 11 Boutique services were healthy
+afterwards. The run's trajectory and full output are in `evals/results/`
+as the `2026-11-21-frontend-bad-image-tag` demo run. No GitHub PR was opened
+in this run (the fix was committed locally); the agent's only write path is
+still a branch + PR, reviewed by a human before anything is merged.
+
 ## Why this project
 
 When production breaks, an on-call engineer repeats the same loop: read the alert, check pod status, read logs and metrics, form a hypothesis, find the config that caused it, fix it. Most of the time goes to investigation, not to typing the fix.
