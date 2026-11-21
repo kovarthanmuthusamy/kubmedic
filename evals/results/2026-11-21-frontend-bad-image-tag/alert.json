@@ -1,0 +1,10 @@
+{
+  "alertname": "KubePodNotReady",
+  "labels": {
+    "namespace": "boutique",
+    "service": "frontend"
+  },
+  "annotations": {
+    "summary": "frontend: ImagePullBackOff"
+  }
+}
